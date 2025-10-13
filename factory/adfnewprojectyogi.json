@@ -1,0 +1,9 @@
+{
+	"name": "adfnewprojectyogi",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "cc1bf47e-5848-449c-bb15-91714f0ca25e",
+		"tenantId": "c5be2062-3ed6-4a33-b604-78ce32369f54"
+	}
+}
