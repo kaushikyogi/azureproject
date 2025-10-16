@@ -32,8 +32,6 @@
 			{
 				"name": "For Each Table",
 				"type": "ForEach",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "lookupdata",
@@ -104,11 +102,11 @@
 												"type": "DatasetReference",
 												"parameters": {
 													"schema": {
-														"value": "@item().table_name",
+														"value": "@item().schema_name",
 														"type": "Expression"
 													},
 													"table": {
-														"value": "@item().schema_name",
+														"value": "@item().table_name",
 														"type": "Expression"
 													}
 												}
