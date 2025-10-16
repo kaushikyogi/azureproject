@@ -13,23 +13,23 @@
 					"secureOutput": false,
 					"secureInput": false
 				},
-				"userProperties": []
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureDatabricksDeltaLakeSource",
+						"query": {
+							"value": "Select * from spotify_dev.metdata_tables.metadata",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_deltalake",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
 			}
 		],
-		"parameters": {
-			"schema": {
-				"type": "string"
-			},
-			"table": {
-				"type": "string"
-			},
-			"cdc": {
-				"type": "string"
-			},
-			"from_date": {
-				"type": "string"
-			}
-		},
 		"variables": {
 			"current": {
 				"type": "String"
