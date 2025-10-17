@@ -58,6 +58,124 @@
 									"value": "@equals(item().load_type,'full')",
 									"type": "Expression"
 								},
+								"ifFalseActivities": [
+									{
+										"name": "Copy Incremental Tables",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Getting Watermark",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											},
+											{
+												"activity": "Getting Max Time From Database",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureSqlSource",
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"enableStaging": false
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_azure_sql",
+												"type": "DatasetReference",
+												"parameters": {
+													"schema": {
+														"value": "@item().schema_name",
+														"type": "Expression"
+													},
+													"table": {
+														"value": "@item().table_name",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"name": "Getting Max Time From Database",
+										"type": "Lookup",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureSqlSource",
+												"sqlReaderQuery": {
+													"value": "@concat('SELECT MAX(updated_at) AS max_timestamp FROM ', item().schema_name, '.', item().table_name)\n",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"dataset": {
+												"referenceName": "DS_azure_sql",
+												"type": "DatasetReference",
+												"parameters": {
+													"schema": {
+														"value": "@item().schema_name",
+														"type": "Expression"
+													},
+													"table": {
+														"value": "@item().table_name",
+														"type": "Expression"
+													}
+												}
+											},
+											"firstRowOnly": false
+										}
+									},
+									{
+										"name": "Getting Watermark",
+										"type": "Lookup",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureDatabricksDeltaLakeSource",
+												"query": {
+													"value": "@concat('SELECT watermark as watermark FROM dev_spotify.metadata_tables.metadata WHERE table_name = ''', item().table_name, '''')\n",
+													"type": "Expression"
+												}
+											},
+											"dataset": {
+												"referenceName": "DS_deltalake",
+												"type": "DatasetReference"
+											},
+											"firstRowOnly": false
+										}
+									}
+								],
 								"ifTrueActivities": [
 									{
 										"name": "Copy full load tables",
