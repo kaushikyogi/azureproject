@@ -356,7 +356,7 @@
 					"method": "POST",
 					"url": "https://prod-05.centralindia.logic.azure.com:443/workflows/9fee01696c1d4f02bb2f5735d7278067/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=E0NeHv9IFSh1-RXAoWF4Tv3SiOlx4kPJFte3slWRs9U",
 					"body": {
-						"value": "(\n    \"pipeline_name\":\"@{pipeline().Pipeline}\",\n    \"pipeline_runID\":\"@{pipeline().RunId}\"\n)",
+						"value": "@concat('{\"pipeline_name\":\"', pipeline().Pipeline, '\",\"pipeline_runID\":\"', pipeline().RunId, '\"}')\n",
 						"type": "Expression"
 					}
 				}
