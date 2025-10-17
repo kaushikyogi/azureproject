@@ -340,9 +340,7 @@
 						"activity": "For Each Table",
 						"dependencyConditions": [
 							"Failed",
-							"Skipped",
-							"Succeeded",
-							"Completed"
+							"Succeeded"
 						]
 					}
 				],
