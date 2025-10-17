@@ -215,6 +215,40 @@
 											},
 											"firstRowOnly": false
 										}
+									},
+									{
+										"name": "update watermark",
+										"type": "Lookup",
+										"dependsOn": [
+											{
+												"activity": "Copy Incremental Tables",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureDatabricksDeltaLakeSource",
+												"query": {
+													"value": "@concat(\r\n    'UPDATE dev_spotify.metadata_tables.metadata ',\r\n    'SET watermark_timestamp = ''',\r\n    activity('Getting Max Time From Database').output.value[0].max_timestamp,\r\n    ''' WHERE table_name = ''',\r\n    item().table_name,\r\n    ''''\r\n)\r\n",
+													"type": "Expression"
+												}
+											},
+											"dataset": {
+												"referenceName": "DS_deltalake",
+												"type": "DatasetReference"
+											},
+											"firstRowOnly": false
+										}
 									}
 								],
 								"ifTrueActivities": [
