@@ -170,7 +170,7 @@
 											"source": {
 												"type": "AzureDatabricksDeltaLakeSource",
 												"query": {
-													"value": "@concat('SELECT watermark as watermark FROM dev_spotify.metadata_tables.metadata WHERE table_name = ''', item().table_name, '''')\n",
+													"value": "@concat('SELECT watermark_timestamp as watermark FROM dev_spotify.metadata_tables.metadata WHERE table_name = ''', item().table_name, '''')\n",
 													"type": "Expression"
 												}
 											},
