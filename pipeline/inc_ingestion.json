@@ -62,8 +62,6 @@
 									{
 										"name": "Copy Incremental Tables",
 										"type": "Copy",
-										"state": "Inactive",
-										"onInactiveMarkAs": "Succeeded",
 										"dependsOn": [
 											{
 												"activity": "Getting Watermark",
@@ -90,13 +88,30 @@
 											"source": {
 												"type": "AzureSqlSource",
 												"sqlReaderQuery": {
-													"value": "Select * from @item().schema_name.@item().table_name where updated_at is between ",
+													"value": "@concat(\n    'SELECT * FROM ',\n    item().schema_name, '.', item().table_name,\n    ' WHERE updated_at BETWEEN ''',\n    activity('Getting Watermark').output.value[0].watermark,\n    ''' AND ''',\n    activity('Getting Max Time From Database').output.value[0].max_timestamp,\n    ''''\n)\n",
 													"type": "Expression"
 												},
 												"queryTimeout": "02:00:00",
 												"partitionOption": "None"
 											},
-											"enableStaging": false
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
 										},
 										"inputs": [
 											{
@@ -109,6 +124,26 @@
 													},
 													"table": {
 														"value": "@item().table_name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_adls_parquet_dynamic",
+												"type": "DatasetReference",
+												"parameters": {
+													"container": {
+														"value": "@item().container_name",
+														"type": "Expression"
+													},
+													"folder": {
+														"value": "@item().directory_name",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@item().file_name",
 														"type": "Expression"
 													}
 												}
