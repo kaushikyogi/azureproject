@@ -1,0 +1,12 @@
+{
+	"name": "LS_adb_deltalake",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLake",
+		"typeProperties": {
+			"domain": "https://adb-272851177975840.0.azuredatabricks.net",
+			"clusterId": "1016-085002-2rs3d4ee",
+			"workspaceResourceId": "/subscriptions/b572548a-6c21-4f40-8682-b87e1ad5cdab/resourceGroups/rg_new_project/providers/Microsoft.Databricks/workspaces/adbnewprojectyogi"
+		}
+	}
+}

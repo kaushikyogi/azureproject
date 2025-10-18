@@ -1,0 +1,372 @@
+{
+	"name": "inc_ingestion",
+	"properties": {
+		"activities": [
+			{
+				"name": "lookupdata",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureDatabricksDeltaLakeSource",
+						"query": {
+							"value": "Select * from dev_spotify.metadata_tables.metadata",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_deltalake",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "For Each Table",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "lookupdata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('lookupdata').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Checking Status",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(item().load_type,'full')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "Copy Incremental Tables",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Getting Watermark",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											},
+											{
+												"activity": "Getting Max Time From Database",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureSqlSource",
+												"sqlReaderQuery": {
+													"value": "@concat(\n    'SELECT * FROM ',\n    item().schema_name, '.', item().table_name,\n    ' WHERE ',\n    item().timestamp_column,\n    ' BETWEEN ''',\n    activity('Getting Watermark').output.value[0].watermark,\n    ''' AND ''',\n    activity('Getting Max Time From Database').output.value[0].max_timestamp,\n    ''''\n)\n",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_azure_sql",
+												"type": "DatasetReference",
+												"parameters": {
+													"schema": {
+														"value": "@item().schema_name",
+														"type": "Expression"
+													},
+													"table": {
+														"value": "@item().table_name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_adls_parquet_dynamic",
+												"type": "DatasetReference",
+												"parameters": {
+													"container": {
+														"value": "@item().container_name",
+														"type": "Expression"
+													},
+													"folder": {
+														"value": "@item().directory_name",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@concat(item().file_name, utcNow())\n",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"name": "Getting Max Time From Database",
+										"type": "Lookup",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureSqlSource",
+												"sqlReaderQuery": {
+													"value": "@concat(\n    'SELECT MAX(',\n    item().timestamp_column,\n    ') AS max_timestamp FROM ',\n    item().schema_name,\n    '.',\n    item().table_name\n)\n",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"dataset": {
+												"referenceName": "DS_azure_sql",
+												"type": "DatasetReference",
+												"parameters": {
+													"schema": {
+														"value": "@item().schema_name",
+														"type": "Expression"
+													},
+													"table": {
+														"value": "@item().table_name",
+														"type": "Expression"
+													}
+												}
+											},
+											"firstRowOnly": false
+										}
+									},
+									{
+										"name": "Getting Watermark",
+										"type": "Lookup",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureDatabricksDeltaLakeSource",
+												"query": {
+													"value": "@concat('SELECT watermark_timestamp as watermark FROM dev_spotify.metadata_tables.metadata WHERE table_name = ''', item().table_name, '''')\n",
+													"type": "Expression"
+												}
+											},
+											"dataset": {
+												"referenceName": "DS_deltalake",
+												"type": "DatasetReference"
+											},
+											"firstRowOnly": false
+										}
+									},
+									{
+										"name": "update watermark",
+										"type": "Lookup",
+										"dependsOn": [
+											{
+												"activity": "Copy Incremental Tables",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureDatabricksDeltaLakeSource",
+												"query": {
+													"value": "@concat(\r\n    'UPDATE dev_spotify.metadata_tables.metadata ',\r\n    'SET watermark_timestamp = ''',\r\n    activity('Getting Max Time From Database').output.value[0].max_timestamp,\r\n    ''' WHERE table_name = ''',\r\n    item().table_name,\r\n    ''''\r\n)\r\n",
+													"type": "Expression"
+												}
+											},
+											"dataset": {
+												"referenceName": "DS_deltalake",
+												"type": "DatasetReference"
+											},
+											"firstRowOnly": false
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Copy full load tables",
+										"type": "Copy",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureSqlSource",
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_azure_sql",
+												"type": "DatasetReference",
+												"parameters": {
+													"schema": {
+														"value": "@item().schema_name",
+														"type": "Expression"
+													},
+													"table": {
+														"value": "@item().table_name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_adls_parquet_dynamic",
+												"type": "DatasetReference",
+												"parameters": {
+													"container": {
+														"value": "@item().container_name",
+														"type": "Expression"
+													},
+													"folder": {
+														"value": "@item().directory_name",
+														"type": "Expression"
+													},
+													"file_name": {
+														"value": "@item().file_name",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Alerts",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "For Each Table",
+						"dependencyConditions": [
+							"Failed",
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "POST",
+					"url": "https://prod-05.centralindia.logic.azure.com:443/workflows/9fee01696c1d4f02bb2f5735d7278067/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=E0NeHv9IFSh1-RXAoWF4Tv3SiOlx4kPJFte3slWRs9U",
+					"body": {
+						"value": "@concat('{\"pipeline_name\":\"', pipeline().Pipeline, '\",\"pipeline_runID\":\"', pipeline().RunId, '\"}')\n",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"variables": {
+			"current": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}
