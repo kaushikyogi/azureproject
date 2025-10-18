@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adfnewprojectyogi"
+		},
+		"LS_adls_accountKey": {
+			"value": ""
+		},
+		"LS_azure_sql_password": {
+			"value": ""
+		},
+		"LS_adb_compute_properties_typeProperties_existingClusterId": {
+			"value": "1016-085002-2rs3d4ee"
+		},
+		"LS_adls_properties_typeProperties_url": {
+			"value": "https://sanewprojectyogi.dfs.core.windows.net/"
+		},
+		"LS_azure_sql_properties_typeProperties_server": {
+			"value": "servnewprojectyogi.database.windows.net"
+		},
+		"LS_azure_sql_properties_typeProperties_database": {
+			"value": "dbnewprojectyogi"
+		},
+		"LS_azure_sql_properties_typeProperties_userName": {
+			"value": "adminyogi"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
